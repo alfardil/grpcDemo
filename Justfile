@@ -5,9 +5,8 @@ generate:
         --python_out=. \
         --grpc_python_out=. \
         --mypy_out=. \
-        todo.proto
+        chat.proto
 
-# Usage: just env [optional-install-args]
 env *args:
     pipenv install --dev {{args}}
     pipenv shell

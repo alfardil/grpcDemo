@@ -1,31 +1,63 @@
 from concurrent import futures
-
 import grpc
+import time
+import chat_pb2
+import chat_pb2_grpc
 
-import todo_pb2_grpc
 
-
-class TodoService(todo_pb2_grpc.TodoServiceServicer):
+class ChatService(chat_pb2_grpc.ChatServiceServicer):
     def __init__(self):
-        self.todos = []
+        # store messages
+        self.chats: list[chat_pb2.Note] = []
 
-    def AddItem(self, request, context):
-        print(f"Adding task: {request.text}")
-        self.todos.append(request)
-        return request
+    def ChatStream(self, request, context):
+        """
+        Stream all chat messages to the client.
+        It first sends history, then waits for new messages.
+        """
+        last_index = 0
+        while True:
+            while len(self.chats) > last_index:
+                n = self.chats[last_index]
+                last_index += 1
+                yield n
 
-    def ListItems(self, request, context):
-        for item in self.todos:
-            yield item
+            # Wait a bit before checking again to save CPU
+            time.sleep(0.1)
+
+    def SendNote(self, request: chat_pb2.Note, context):
+        """
+        Receive a note from a client and add it to the history.
+        """
+        arrival_time = time.time()
+        latency = arrival_time - request.timestamp
+        print(f"[{request.name}] {request.message}| Latency: {latency}")
+        self.chats.append(request)
+        return chat_pb2.Empty()
+
+    def send_broadcast(self, message):
+        """Allows the server code to inject a message."""
+        print(f"[SERVER BROADCAST] {message}")
+        note = chat_pb2.Note(name="ADMIN", message=message)
+        self.chats.append(note)
 
 
 def serve():
+    chat_service = ChatService()
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    todo_pb2_grpc.add_TodoServiceServicer_to_server(TodoService(), server)
+    chat_pb2_grpc.add_ChatServiceServicer_to_server(chat_service, server)
     server.add_insecure_port("[::]:50051")
-    print("Todo Server started on port 50051...")
+    print("Chat Server started on port 50051...")
     server.start()
-    server.wait_for_termination()
+    print("Write a broadcast message below: ")
+    try:
+        while True:
+            msg = input()
+            if msg:
+                chat_service.send_broadcast(msg)
+    except KeyboardInterrupt:
+        print("\nStopping server")
+        server.stop(0)
 
 
 if __name__ == "__main__":

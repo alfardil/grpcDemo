@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+// chat service 
+service ChatService {
+  // recieve new messages
+  rpc ChatStream (Empty) returns (stream Note);
+  
+  // send message
+  rpc SendNote (Note) returns (Empty);
+}
+
+// empty field
+message Empty {}
+
+// note instantiation
+message Note {
+  string name = 1;
+  string message = 2;
+  double timestamp = 3;
+}
