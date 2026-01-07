@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+# grpc library
+grpcio = "*"
+mypy-protobuf = "*"
+
+[dev-packages]
+# Tools for generating Python code from .proto files
+grpcio-tools = "*"
+
+[requires]
+python_version = "3.10"

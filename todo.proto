@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+service TodoService {
+  rpc AddItem(TodoItem) returns (TodoItem);
+  rpc ListItems(Empty) returns (stream TodoItem);
+}
+
+message TodoItem {
+  string text = 1;
+  bool completed = 2;
+}
+
+message Empty {}
